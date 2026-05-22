@@ -140,7 +140,6 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Responsive sizing
 const BASE_W = 400, BASE_H = 600;
 let scale = 1;
 
@@ -158,13 +157,11 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
-// ── Game State ──────────────────────────────────────────────────────────────
-let state = 'start'; // start | playing | dead
+let state = 'start';
 let score = 0;
 let best = parseInt(localStorage.getItem('fb_best') || '0');
 let animFrame;
 
-// ── Custom character image ──────────────────────────────────────────────────
 let charImg = null;
 document.getElementById('imageUpload').addEventListener('change', e => {
   const file = e.target.files[0];
@@ -175,7 +172,6 @@ document.getElementById('imageUpload').addEventListener('change', e => {
   img.src = url;
 });
 
-// ── Bird ────────────────────────────────────────────────────────────────────
 const GRAVITY = 0.45;
 const JUMP_VEL = -8.5;
 const BIRD_W = 52, BIRD_H = 52;
@@ -197,14 +193,13 @@ function jump() {
   bird.flap = 1;
 }
 
-// ── Pipes ────────────────────────────────────────────────────────────────────
 const PIPE_W = 58;
 const PIPE_GAP = 165;
 const PIPE_SPEED_START = 2.5;
 let pipeSpeed = PIPE_SPEED_START;
 let pipes = [];
 let pipeTimer = 0;
-const PIPE_INTERVAL = 90; // frames
+const PIPE_INTERVAL = 90;
 
 function spawnPipe() {
   const minY = 80, maxY = BASE_H - 80 - PIPE_GAP;
@@ -212,18 +207,15 @@ function spawnPipe() {
   pipes.push({ x: BASE_W + 10, topH, scored: false });
 }
 
-// ── Clouds (background) ──────────────────────────────────────────────────────
 let clouds = [
   { x: 60,  y: 60,  w: 90, spd: 0.3 },
   { x: 220, y: 100, w: 70, spd: 0.2 },
   { x: 320, y: 45,  w: 110, spd: 0.25 },
 ];
 
-// ── Ground ───────────────────────────────────────────────────────────────────
 const GROUND_Y = BASE_H - 60;
 let groundX = 0;
 
-// ── Drawing helpers ──────────────────────────────────────────────────────────
 function drawSky() {
   const grad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
   grad.addColorStop(0, '#1a8ce0');
@@ -256,13 +248,10 @@ function drawCloud(x, y, w) {
 }
 
 function drawGround() {
-  // Dirt
   ctx.fillStyle = '#c8a05a';
   ctx.fillRect(0, GROUND_Y, BASE_W, BASE_H - GROUND_Y);
-  // Grass strip
   ctx.fillStyle = '#4caf50';
   ctx.fillRect(0, GROUND_Y, BASE_W, 16);
-  // Moving grass lines
   ctx.strokeStyle = '#388e3c';
   ctx.lineWidth = 2;
   for (let i = 0; i < 12; i++) {
@@ -274,9 +263,6 @@ function drawGround() {
 
 function drawPipe(p) {
   const capH = 22, capExtra = 6;
-
-  // === TOP PIPE ===
-  // body
   const tg = ctx.createLinearGradient(p.x, 0, p.x + PIPE_W, 0);
   tg.addColorStop(0, '#2e7d32');
   tg.addColorStop(0.35, '#66bb6a');
@@ -284,8 +270,6 @@ function drawPipe(p) {
   tg.addColorStop(1, '#1b5e20');
   ctx.fillStyle = tg;
   ctx.fillRect(p.x + capExtra, 0, PIPE_W - capExtra * 2, p.topH - capH);
-
-  // top pipe cap
   ctx.fillStyle = '#43a047';
   roundRect(ctx, p.x, p.topH - capH, PIPE_W, capH, [0, 0, 8, 8]);
   ctx.fill();
@@ -293,15 +277,10 @@ function drawPipe(p) {
   ctx.lineWidth = 2;
   roundRect(ctx, p.x, p.topH - capH, PIPE_W, capH, [0, 0, 8, 8]);
   ctx.stroke();
-
-  // highlight
   ctx.fillStyle = 'rgba(255,255,255,0.15)';
   ctx.fillRect(p.x + capExtra + 5, 0, 8, p.topH - capH);
-
-  // === BOTTOM PIPE ===
   const botY = p.topH + PIPE_GAP;
   const botH = GROUND_Y - botY;
-
   const bg = ctx.createLinearGradient(p.x, 0, p.x + PIPE_W, 0);
   bg.addColorStop(0, '#2e7d32');
   bg.addColorStop(0.35, '#66bb6a');
@@ -309,8 +288,6 @@ function drawPipe(p) {
   bg.addColorStop(1, '#1b5e20');
   ctx.fillStyle = bg;
   ctx.fillRect(p.x + capExtra, botY + capH, PIPE_W - capExtra * 2, botH - capH);
-
-  // bottom pipe cap
   ctx.fillStyle = '#43a047';
   roundRect(ctx, p.x, botY, PIPE_W, capH, [8, 8, 0, 0]);
   ctx.fill();
@@ -318,8 +295,6 @@ function drawPipe(p) {
   ctx.lineWidth = 2;
   roundRect(ctx, p.x, botY, PIPE_W, capH, [8, 8, 0, 0]);
   ctx.stroke();
-
-  // highlight
   ctx.fillStyle = 'rgba(255,255,255,0.15)';
   ctx.fillRect(p.x + capExtra + 5, botY + capH, 8, botH - capH);
 }
@@ -339,16 +314,12 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-// ── Draw the character (custom portrait) ─────────────────────────────────────
 function drawCharacter(x, y, angle, flap) {
   ctx.save();
   ctx.translate(x + BIRD_W / 2, y + BIRD_H / 2);
   ctx.rotate(angle);
-
   const hw = BIRD_W / 2, hh = BIRD_H / 2;
-
   if (charImg) {
-    // Use uploaded photo - circular crop
     ctx.save();
     ctx.beginPath();
     ctx.arc(0, 0, hw - 2, 0, Math.PI * 2);
@@ -356,7 +327,6 @@ function drawCharacter(x, y, angle, flap) {
     ctx.clip();
     ctx.drawImage(charImg, -hw, -hh, BIRD_W, BIRD_H);
     ctx.restore();
-    // white border
     ctx.beginPath();
     ctx.arc(0, 0, hw - 1, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(255,255,255,0.9)';
@@ -365,12 +335,10 @@ function drawCharacter(x, y, angle, flap) {
   } else {
     drawPaulCharacter(hw, hh, flap);
   }
-
   ctx.restore();
 }
 
 function drawPaulCharacter(hw, hh, flap) {
-  // Shadow
   ctx.save();
   ctx.globalAlpha = 0.2;
   ctx.fillStyle = '#000';
@@ -378,32 +346,22 @@ function drawPaulCharacter(hw, hh, flap) {
   ctx.ellipse(0, hh + 4, hw * 0.7, 5, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
-
-  // ── Body / T-Shirt (black) ──
   ctx.fillStyle = '#1a1a1a';
   ctx.beginPath();
   ctx.ellipse(0, hh * 0.6, hw * 0.72, hh * 0.5, 0, 0, Math.PI * 2);
   ctx.fill();
-
-  // collar
   ctx.fillStyle = '#333';
   ctx.beginPath();
   ctx.ellipse(0, hh * 0.05, hw * 0.25, hh * 0.12, 0, 0, Math.PI * 2);
   ctx.fill();
-
-  // ── Head (skin tone) ──
   ctx.fillStyle = '#f5c5a3';
   ctx.beginPath();
   ctx.ellipse(0, -hh * 0.3, hw * 0.52, hh * 0.52, 0, 0, Math.PI * 2);
   ctx.fill();
-
-  // face shading
   ctx.fillStyle = 'rgba(0,0,0,0.05)';
   ctx.beginPath();
   ctx.ellipse(0, -hh * 0.1, hw * 0.52, hh * 0.26, 0, 0, Math.PI * 2);
   ctx.fill();
-
-  // ── Eyes ──
   const eyeY = -hh * 0.38;
   ctx.fillStyle = '#fff';
   ctx.beginPath(); ctx.ellipse(-hw * 0.19, eyeY, 6, 5, 0, 0, Math.PI * 2); ctx.fill();
@@ -411,124 +369,60 @@ function drawPaulCharacter(hw, hh, flap) {
   ctx.fillStyle = '#3a2010';
   ctx.beginPath(); ctx.ellipse(-hw * 0.19, eyeY, 3.5, 3.5, 0, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.ellipse(hw * 0.19, eyeY, 3.5, 3.5, 0, 0, Math.PI * 2); ctx.fill();
-  // eye shine
   ctx.fillStyle = '#fff';
   ctx.beginPath(); ctx.arc(-hw * 0.21, eyeY - 1.5, 1.2, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.arc(hw * 0.17, eyeY - 1.5, 1.2, 0, Math.PI * 2); ctx.fill();
-
-  // ── Glasses ──
   ctx.strokeStyle = '#222';
   ctx.lineWidth = 2;
-  // left lens
-  ctx.beginPath();
-  ctx.roundRect(-hw * 0.38, eyeY - 7, 17, 13, 3);
-  ctx.stroke();
-  // right lens
-  ctx.beginPath();
-  ctx.roundRect(hw * 0.07, eyeY - 7, 17, 13, 3);
-  ctx.stroke();
-  // bridge
-  ctx.beginPath();
-  ctx.moveTo(-hw * 0.38 + 17, eyeY);
-  ctx.lineTo(hw * 0.07, eyeY);
-  ctx.stroke();
-  // left arm
-  ctx.beginPath();
-  ctx.moveTo(-hw * 0.38, eyeY);
-  ctx.lineTo(-hw * 0.55, eyeY - 2);
-  ctx.stroke();
-  // right arm
-  ctx.beginPath();
-  ctx.moveTo(hw * 0.07 + 17, eyeY);
-  ctx.lineTo(hw * 0.56, eyeY - 2);
-  ctx.stroke();
-
-  // ── Nose ──
+  ctx.beginPath(); ctx.roundRect(-hw * 0.38, eyeY - 7, 17, 13, 3); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(hw * 0.07, eyeY - 7, 17, 13, 3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-hw * 0.38 + 17, eyeY); ctx.lineTo(hw * 0.07, eyeY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-hw * 0.38, eyeY); ctx.lineTo(-hw * 0.55, eyeY - 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(hw * 0.07 + 17, eyeY); ctx.lineTo(hw * 0.56, eyeY - 2); ctx.stroke();
   ctx.fillStyle = '#e8a882';
-  ctx.beginPath();
-  ctx.ellipse(0, -hh * 0.22, 4, 3, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // ── Mouth (slight open / expression) ──
+  ctx.beginPath(); ctx.ellipse(0, -hh * 0.22, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#c0705a';
-  ctx.beginPath();
-  ctx.ellipse(0, -hh * 0.08, 7, 4, 0, 0, Math.PI);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, -hh * 0.08, 7, 4, 0, 0, Math.PI); ctx.fill();
   ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.ellipse(0, -hh * 0.07, 5, 2.5, 0, 0, Math.PI);
-  ctx.fill();
-
-  // ── Ears ──
+  ctx.beginPath(); ctx.ellipse(0, -hh * 0.07, 5, 2.5, 0, 0, Math.PI); ctx.fill();
   ctx.fillStyle = '#f5c5a3';
   ctx.beginPath(); ctx.ellipse(-hw * 0.5, -hh * 0.28, 5, 7, 0.2, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.ellipse(hw * 0.5, -hh * 0.28, 5, 7, -0.2, 0, Math.PI * 2); ctx.fill();
-
-  // ── Backwards cap ──
-  const capY = -hh * 0.76;
-  // cap body (dark navy)
   ctx.fillStyle = '#1e2a4a';
-  ctx.beginPath();
-  ctx.ellipse(0, -hh * 0.56, hw * 0.54, hh * 0.28, 0, Math.PI, Math.PI * 2);
-  ctx.fill();
-  // cap top
+  ctx.beginPath(); ctx.ellipse(0, -hh * 0.56, hw * 0.54, hh * 0.28, 0, Math.PI, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#243060';
-  ctx.beginPath();
-  ctx.ellipse(0, -hh * 0.7, hw * 0.52, hh * 0.22, 0, Math.PI, Math.PI * 2);
-  ctx.fill();
-  // brim (pointing BACK - left side since character faces right)
+  ctx.beginPath(); ctx.ellipse(0, -hh * 0.7, hw * 0.52, hh * 0.22, 0, Math.PI, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#1e2a4a';
-  ctx.beginPath();
-  ctx.ellipse(-hw * 0.5, -hh * 0.56, 14, 5, -0.3, 0, Math.PI * 2);
-  ctx.fill();
-  // button on top
+  ctx.beginPath(); ctx.ellipse(-hw * 0.5, -hh * 0.56, 14, 5, -0.3, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = '#3a4a80';
-  ctx.beginPath();
-  ctx.arc(0, -hh * 0.88, 3, 0, Math.PI * 2);
-  ctx.fill();
-  // stripe on cap
+  ctx.beginPath(); ctx.arc(0, -hh * 0.88, 3, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = '#3a4a80';
   ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(-hw * 0.3, -hh * 0.62);
-  ctx.lineTo(hw * 0.3, -hh * 0.62);
-  ctx.stroke();
-
-  // ── Arms flap animation ──
+  ctx.beginPath(); ctx.moveTo(-hw * 0.3, -hh * 0.62); ctx.lineTo(hw * 0.3, -hh * 0.62); ctx.stroke();
   const flapOffset = Math.sin(Date.now() * 0.008) * 8;
   ctx.fillStyle = '#f5c5a3';
-  // left arm
   ctx.save();
   ctx.translate(-hw * 0.7, hh * 0.1);
   ctx.rotate(0.4 + flapOffset * 0.05);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 7, 14, 0.3, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 0, 7, 14, 0.3, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
-  // right arm
   ctx.save();
   ctx.translate(hw * 0.7, hh * 0.1);
   ctx.rotate(-0.4 - flapOffset * 0.05);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, 7, 14, -0.3, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, 0, 7, 14, -0.3, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
 
-// ── Score HUD ────────────────────────────────────────────────────────────────
 function updateHud() {
   const hud = document.getElementById('scoreHud');
   hud.textContent = state === 'playing' ? score : '';
 }
 
-// ── Collision ────────────────────────────────────────────────────────────────
 function checkCollision() {
   const bx = bird.x + 6, by = bird.y + 6;
   const bw = BIRD_W - 12, bh = BIRD_H - 12;
-
   if (by + bh >= GROUND_Y) return true;
   if (by <= 0) return true;
-
   for (const p of pipes) {
     const withinX = bx + bw > p.x + 4 && bx < p.x + PIPE_W - 4;
     const hitTop = by < p.topH;
@@ -538,35 +432,26 @@ function checkCollision() {
   return false;
 }
 
-// ── Game loop ─────────────────────────────────────────────────────────────────
 let frame = 0;
 function loop() {
   animFrame = requestAnimationFrame(loop);
   frame++;
-
-  // ── Update ──
   if (state === 'playing') {
-    // Bird physics
     bird.vy += GRAVITY;
     bird.y += bird.vy;
     bird.angle = Math.max(-0.4, Math.min(1.2, bird.vy * 0.06));
     bird.flap = Math.max(0, bird.flap - 0.1);
-
-    // Pipes
     pipeTimer++;
     if (pipeTimer >= PIPE_INTERVAL) { spawnPipe(); pipeTimer = 0; }
-
     for (let i = pipes.length - 1; i >= 0; i--) {
       pipes[i].x -= pipeSpeed;
       if (!pipes[i].scored && pipes[i].x + PIPE_W < bird.x) {
         pipes[i].scored = true;
         score++;
         pipeSpeed = PIPE_SPEED_START + Math.floor(score / 5) * 0.3;
-        showScorePop();
       }
       if (pipes[i].x + PIPE_W < -10) pipes.splice(i, 1);
     }
-
     if (checkCollision()) {
       state = 'dead';
       if (score > best) { best = score; localStorage.setItem('fb_best', best); }
@@ -576,11 +461,8 @@ function loop() {
       document.getElementById('scoreHud').textContent = '';
     }
   } else if (state === 'start') {
-    // idle bob
     bird.y = BASE_H / 2 - 20 + Math.sin(Date.now() * 0.003) * 12;
   }
-
-  // ── Draw ──
   drawSky();
   drawClouds();
   pipes.forEach(drawPipe);
@@ -589,18 +471,6 @@ function loop() {
   updateHud();
 }
 
-// ── Score pop animation ───────────────────────────────────────────────────────
-let pops = [];
-function showScorePop() {
-  pops.push({ x: bird.x + 30, y: bird.y, alpha: 1 });
-  setTimeout(() => { pops.shift(); }, 600);
-}
-
-// overlay pops each frame (called in rAF)
-const origLoop = loop;
-// (pops drawn inline in loop below)
-
-// ── Game control ──────────────────────────────────────────────────────────────
 function startGame() {
   state = 'playing';
   score = 0;
@@ -633,7 +503,6 @@ document.getElementById('gameWrapper').addEventListener('touchstart', e => {
 }, { passive: false });
 document.addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); } });
 
-// Start the loop
 requestAnimationFrame(loop);
 </script>
 </body>
