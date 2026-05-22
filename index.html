@@ -32,13 +32,16 @@
       align-items: center;
       justify-content: center;
       pointer-events: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
     .screen {
       display: none;
       flex-direction: column;
       align-items: center;
       gap: 16px;
-      pointer-events: all;
+      pointer-events: auto;
+      -webkit-pointer-events: auto;
     }
     .screen.active { display: flex; }
     .title {
@@ -54,7 +57,8 @@
       text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
     .btn {
-      padding: 14px 36px;
+      padding: 16px 40px;
+      min-height: 54px;
       font-size: 20px;
       font-weight: 700;
       background: linear-gradient(135deg, #f0a500, #ff6b35);
@@ -64,6 +68,8 @@
       cursor: pointer;
       box-shadow: 0 6px 0 #c07000, 0 0 20px rgba(240,165,0,0.4);
       transition: transform 0.1s, box-shadow 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 0 #c07000, 0 0 24px rgba(240,165,0,0.5); }
     .btn:active { transform: translateY(2px); box-shadow: 0 4px 0 #c07000; }
@@ -611,10 +617,20 @@ function restartGame() {
   startGame();
 }
 
-document.getElementById('startBtn').addEventListener('click', () => jump());
-document.getElementById('restartBtn').addEventListener('click', () => jump());
+function addBtn(id) {
+  const el = document.getElementById(id);
+  el.addEventListener('click', e => { e.stopPropagation(); jump(); });
+  el.addEventListener('touchend', e => { e.preventDefault(); e.stopPropagation(); jump(); }, { passive: false });
+}
+addBtn('startBtn');
+addBtn('restartBtn');
+
 canvas.addEventListener('click', () => jump());
-canvas.addEventListener('touchstart', e => { e.preventDefault(); jump(); }, { passive: false });
+document.getElementById('gameWrapper').addEventListener('touchstart', e => {
+  if (e.target.closest('.btn') || e.target.closest('label') || e.target.id === 'imageUpload') return;
+  e.preventDefault();
+  jump();
+}, { passive: false });
 document.addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); jump(); } });
 
 // Start the loop
